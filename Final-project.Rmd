@@ -1,0 +1,282 @@
+---
+title: "Real Estate Valuation"
+author: "Matthew Peters & Jalen Souksamlane"
+date: "May 18, 2019"
+output: pdf_document
+---
+
+\clearpage
+
+**1.2 Project Components**
+\newline
+a. We assume that the relationship between TDate and price will be relatively low (R^2 value will be low). Although the economic state of the area could have an influence on the transaction date we 
+believe that their would be minimal influence compared to our others predictors. Thus, we assume that the association between TDate and price will be negative as well. 
+
+We assume that the relationship between the house age (years) and price will be high (R^2 value will be high) because the age of the real estate will determine how much money an investor will have to invest into the property for renovations and thus has a big effect on the price. Thus, we assume that the assocaition between house age and price will be positive.
+
+We assume that the relationship between the number of conveince stores in the area and the price will be relatively high (R^2 value will be high) because more conveience stores could imply a more modern and urban area which would cause the price of real estate to jump higher. Thus, we assume that the association between the number of convenience stores and price will be positive. 
+
+We assume that the relationship between the latitude (geographic location) and the price will be relatively high (R^2 value will be high) because the price of a pice of real estate in the state of California vaires greatly from the price of real estate in the state of Colorado. Thus, we assume that the association between the latitude and price will positive. 
+
+
+```{r, include=FALSE}
+RealEstateValuation<-read.csv("C://Users//Jalen//Desktop//PSTAT126//RealEstateValuation.txt", sep="")
+options(scipen = 5)
+```
+
+
+```{r}
+# Assigning the data points to their respective variable names
+Price <- RealEstateValuation$Price
+TDate <- RealEstateValuation$TDate
+Age <- RealEstateValuation$Age
+Metro <- RealEstateValuation$Metro
+Stores <- RealEstateValuation$Stores
+Latitude <- RealEstateValuation$Latitude
+Longitude <- RealEstateValuation$Longitude
+
+# Calculating the R^2 value for each variable individually
+cor(Price, TDate)^2
+cor(Price, Age)^2
+cor(Price, Stores)^2
+cor(Price, Latitude)^2
+
+```
+
+```{r}
+# Fitting the regression model
+Model_1.lm <- lm(Price~TDate+Age+Stores+Latitude)
+par(mfrow=c(2,2))
+plot(Model_1.lm,which=1:3)
+
+beta <- summary(Model_1.lm)$coefficients
+beta
+
+```
+
+```{r,include=FALSE}
+betahat0 <- beta[1,1]
+b0 <- round(betahat0, digits = 3)
+betahat1 <- beta[2,1]
+b1 <- round(betahat1, digits = 3)
+betahat2 <- beta[3,1]
+b2 <- round(betahat2, digits = 3)
+betahat3 <- beta[4,1]
+b3 <- round(betahat3, digits = 3)
+betahat4 <- beta[5,1]
+b4 <- round(betahat4, digits = 3)
+
+```
+From the summary output we find that by conducting tests
+on individual regression coefficients with ?? = 0.01 and reading the summary output we find that, Age, Stores and Latitude have significant p-values. First off, the estimator coefficient of Age tells us that if the age of a house increases by 1 year then the price of a house decreases by -.301 Ping. The estimator coeffcient of Stores tells us that if 1 store is added to the area then the price of the house wull increase 1.929 Ping. The estimator coefficient of Latitude tells us that if the degree of latitude is increased by 1 unit then the price of the house increases by 407.814 Ping. 
+
+Multiple Regression Line of Price ~ TDate + Age + Stores + Latitude
+
+Y =  `` `r b0` `` + `` `r b1` ``x1 + `` `r b2` ``x2 + `` `r b3` ``x3 + `` `r b4` ``x4
+
+```{r}
+# Adding Metro and Longitude into the linear model 
+Model_4.lm <- lm(Price~TDate+Age+Stores+Latitude+Metro+Longitude)
+model_41.lm<-lm(Price~TDate+Age+Stores+Latitude)
+summary(Model_4.lm)
+anova(model_41.lm,Model_4.lm)
+```
+By using Partial F Test our null hypothesis would be that beta5=beta6=0 and the alternative hypothesis would be that either beta5 or beta6 doesn't equal 0. The value of the test statistic is 39.428 and our null dsitribution is 3.02. Since the test statistic is greater than the null distribution we would reject the null hypothesis. Additionally, from the summary of the model with Metro and Longitude added we can see that the p-value for Longitude is not significant and Metro is significant, thus we would keep Metro and disgard Longitude. 
+
+
+```{r}
+Model_5.lm <- lm(Price~TDate+Age+Metro+Latitude)
+summary(Model_5.lm)
+par(mfrow=c(2,2))
+plot(Model_5.lm,which = 1:3)
+
+```
+
+
+```{r, include=FALSE}
+library(alr4)
+library(car)
+```
+
+We will now make added variable plots for the model Price~TDate+Age+Stores+Latitude
+and the model Price~TDate+Age+Metro+Latitude. 
+
+```{r}
+model10<-lm(Price~TDate+Age+Stores+Latitude)
+model11<-lm(Price~TDate+Age+Metro+Latitude)
+summary(model10)
+summary(model11)
+avPlots(model10,id=FALSE)
+avPlots(model11,id=FALSE)
+```
+
+From the Added Variable Plots we can see that the slope of Metro is greater than the slope of stores thus showing that Metro is a more significant variable to have in the model than Stores.Additionally, we can see from the summary of both models that the adjusted R^2 value for the model containing Metro is greater than the Adjuested R^2 value for the model containing Stores thus Metro has a greater effect on Price. Therefore the preferred model is Price~TDate+Age+Metro+Latitude.
+
+
+# Price~Metro+Age+Latitude+TDate
+
+```{r}
+library(car)
+age <- ifelse(Age==0,Age +.01,Age)
+pt<-powerTransform(cbind(Metro, age, Latitude,TDate)~-1, data = RealEstateValuation)
+summary(pt)
+```
+We can summarize that the null hypothesis is the lambda value of Metro,Age,Latitude, and TDate equal to 0 and the alternative hypothesis is that atleast one of the values of lambda is not equal to 0. Since from the power transformation the p-values of all the variabels are 0 so we would reject the null hypothesis thus we will log transofrm Metro since from the summary it's raised the power is 0 and we will square root the variable "Age" since it has a power of .5.  
+
+Next we will perform a Box-Cox transformation to see if the response varibale needs to be transformed. 
+
+```{r}
+#Box Cox Method 
+RElm<-lm(Price~.,data = RealEstateValuation)
+boxCox(RElm)
+```
+From he Box Cox Transformation, since the interval is relatively close to 0 we can conclude that to use a log transformation for the response variable "Price". 
+
+
+```{r}
+#Box Cox Method, univariate
+summary(l1<-powerTransform(Price~Metro+Age+Latitude+TDate,RealEstateValuation))
+```
+We can see from the Power Transformation that this supports our statement of performing a log transformation onto the response variable "Price". 
+
+# Now we will fit the transformed predictors into a model and check to see if there were any improvements 
+```{r}
+# the transformed model comapred with the original model 
+original_model<-lm(Price~Metro+Age+Latitude+TDate)
+final_model<-lm(log(Price)~log(Metro)+sqrt(Age)+Latitude+TDate)
+par(mfrow=c(2,2))
+plot(original_model)
+par(mfrow=c(2,2))
+plot(final_model)
+summary(original_model)
+summary(final_model)
+```
+From plotting the residual vs. fitted, Q-Q, and scale location plots, we were able to notice significant improvements from the transformations. For example, from the Residual vs. Fitted plots of the origianl model(Price~Metro+Age+Latitude+TDate) we can see an improvement in the transformed model(log(Price)~log(Metro)+sqrt(Age)+Latitude+TDate) because the residual vs. fitted of the original model does not hold linearity and constant variance while the residual vs. fitted plot of the transformed model holds both linearity and constant variance. Although there is slight improvement of normality in the Q-Q plot the difference in the Scale Location plot of the transformed model is more significant because we see the points more spreadout and having a constant variance along the line. 
+
+
+
+# log(Price)~log(Metro)+sqrt(Age)+latitude+TDate
+
+```{r}
+summary(final_model)
+```
+
+From this analysis an interesting point we found out was that Latitude had the biggest effect on Price at the end. From the summary of our Final model we could interpret that if Latitude increases by 1 degree then the price of a house will increase by 11.08 Ping in terms of the Sindian District. It is also interesting to see that the distance to the nearest Metro station has a greater effect on the house price than  the Age of the house becaause initially we thought that Age would have a large effeect rather it didn't in this case. 
+
+
+
+
+
+## Part 2 
+
+```{r}
+# Reading in Concrete data file
+Concrete <- read.csv("C://Users//Jalen//Desktop//PSTAT126//Concrete.txt", sep="")
+# Creating variables for each predictors and response
+X1 <- Concrete$X1
+X2 <- Concrete$X2
+X3 <- Concrete$X3
+X4 <- Concrete$X4
+X5 <- Concrete$X5
+X6 <- Concrete$X6
+X7 <- Concrete$X7
+X8 <- Concrete$X8
+Y <- Concrete$Y
+```
+
+```{r}
+# Sample size of the dataset
+n <- length(Concrete$Y)
+
+pairs(Concrete)
+
+# Smallest model for the dataset
+mod.0 <- lm(Y~X1)
+
+# Largest model for the dataset
+mod.full <- lm(Y~X1+X2+X3+X4+X5+X6+X7+X8)
+
+# Forward BIC test on the model
+step(mod.0, scope = list(lower = mod.0, upper = mod.full), direction = 'forward', k = log(n), trace= 0)
+
+# New model found through forward BIC method
+mod.better <- lm(Y ~ X1 + X5 + X8 + X2 + X4 + X3)
+```
+
+```{r}
+# Mean Response response of the model
+Yhat <- fitted(mod.better)
+
+# Calculation for the residuals of the model
+e <- Y - Yhat
+
+# Diagnostic Checks to asses linear regression assumptions
+#par(mfrow=c(1,1))
+plot(mod.better, which=1:3)
+```
+From running a Diagnostic Check on the new model (Y ~ X1 + X5 + X8 + X2 + X4 + X3) we can see from the Residual vs. Fitted plot that linearity does hold although the spread of residuals seems to be decreasing as the fitted values change. Thus, there is a slight variation for the constant variance assumption. For the Normal Q-Q plot we can see that the Normality asssumption does hold. With the Scale Location plot we can see that as the fitted values get larger the spread of the data points decrease although for the majority of data points constant variancs does hold. 
+
+
+```{r}
+# Leverage
+h <- hatvalues(mod.better)
+
+p <-sum(h)
+
+high.leverage <- which(h > (2*p) / n )
+
+# Cook's Statistic
+cd <- cooks.distance(mod.better)
+
+cooks <- which(cd > (4 / (n-p-1)))
+
+# Taking out points with high leverage and high influence 
+Concrete2 <- Concrete[c(1:2,6,8:12,14:26,28:33,35,37:41,44:56,58:66,68:69,71:74,76,78:79,81:99,101:102,104:171,173:224,228:501,504,506:553,555:584,586:604,606:610,612:616,618:620,622,624:769,771:792,794:798,800:814,816:828,830:862,864:933,935:1019,1021:1030),]
+
+# Finding influential points
+influenceIndexPlot(mod.better, vars = c('hat', 'Cook'), id=list(n=83))
+mod.better1 <- lm(Y ~ X1 + X5 + X8 + X2 + X4 + X3, data=Concrete2)
+par(mfrow=c(2,2))
+plot(mod.better1,which = 1:3)
+
+```
+So in order to test for influential points we checked which data points had a high leverage and which data points had a high Cook's statistic and we compared the two vectors to see where the data points intersected in order to determine the points that had both high leverage and high influence. Next, we created a new data set without the influential points and ran diagnostic checks to see if there were any improvements. From the Diagnostic Plots we can see a visual representation of the data points with high leverage veresus a high Cook's statisitc. From the Q-Q plot we can see that the Normality assumption holds as well. Additionally, we see the the normality assumption and constant variance assumption hold also in the Residual versus fitted and Scale Location Plots. 
+
+
+```{r}
+# 95% Condidence Interval
+# Estimated Values
+summary(Concrete)
+new <- data.frame(X1=mean(X1), X2=107, X3=100, X4=mean(X4), X5=7, X8=mean(X8))
+ans <- predict(mod.better,new,se.fit=TRUE,interval='confidence',level=0.95,type='response')
+ans$fit
+```
+In order to create the mean response we compiled a data frame with the means of each predictor value although we changed the mean values of the predictors who's median was at 0 in order to present the data better. Then we computed a 95% confidence interval whcih tells us that, we are 95% confident that with the variabels presented in the model (Xi where i=1 through 8) the concrete comprehensive strength is between (40.95,43.09) MPa. 
+```{r}
+# 95% Prediction Interval
+ans2 <- predict(mod.better,new,se.fit=TRUE,interval='prediction',level=0.95,type='response')
+ans2$fit
+```
+By calculating the prediction interval we are 95%  confident that next new observation of concrete comprehensive strength will fall within the range of (21.56,62.47). 
+
+
+
+```{r}
+# Backward BIC test on the model
+step(mod.full, scope = list(lower = mod.0, upper = mod.full), direction = 'backward', k = log(n), trace= 0)
+
+# New model found through forward BIC method
+mod.better2 <- lm(Y ~ X1 + X2 + X3 + X4 + X5 + X8)
+```
+
+```{r}
+summary(mod.better)
+summary(mod.better2)
+```
+As we can see the model from backwards BIC is the same as the model from forwards BIC thus, the influential points will be the same for both models and we conclude that our final model will be:
+
+ Y ~ X1 + X2 + X3 + X4 + X5 + X8
+ 
+ 
+ An interesting point from this analysis is that forward and backward BIC both had the same model at the end and. In terms of our final model we found out that Superplasticizer (X5) had the largest effect on Concrete comprehesive strength. In fact, we found out that if superplasticizer increases by 1 (kg/m^3) then the concrete comprehensive strength increases by .24 Mpa. 
+
